@@ -19,7 +19,6 @@ include:
 {%- set cluster_members = [] -%}
 
 {%- set util_compound_string = 'G@ec2_roles:*couchbase* and G@ec2_environment:' +  ','.join(grains.get('ec2_environment','')) + ' and G@ec2_apps:*' + ''.join(grains.get('ec2_apps','')) + '*' %}
-{%- set tmp = salt['publish.publish']( '%s' % util_compound_string, 'saltutil.sync_grains', 'compound') -%}
 {%- set server_list = salt['publish.publish']( '%s' % util_compound_string, 'network.ip_addrs', 'eth0', 'compound') -%}
 
 {% for server,ips in server_list.iteritems() %}
@@ -132,7 +131,7 @@ couchbase-cluster-bucket:
 couchbase-cluster-rebalance:
   cmd.wait:
     - name: 'sleep 10s; /opt/couchbase/bin/couchbase-cli rebalance -c {{ cluster_member }}:{{ couchbase_admin_port }}  -u {{ couchbase_username }} -p {{ couchbase_password }}'
-    - onlyif: onlyif: /opt/couchbase/bin/couchbase-cli rebalance-status -c {{ cluster_member }}:{{ couchbase_admin_port }} -u {{ couchbase_username }} -p {{ couchbase_password }} | grep None
+    - onlyif: /opt/couchbase/bin/couchbase-cli rebalance-status -c {{ cluster_member }}:{{ couchbase_admin_port }} -u {{ couchbase_username }} -p {{ couchbase_password }} | grep None
     - watch:
         - cmd: couchbase-cluster-add
     - require:
