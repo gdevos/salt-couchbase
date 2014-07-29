@@ -1,0 +1,2 @@
+include:
+  - couchbase.common
