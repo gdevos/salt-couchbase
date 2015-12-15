@@ -2,11 +2,12 @@ include:
   - couchbase.common
 
 {% set couchbase_server = pillar.get('couchbase_server', {}) -%}
-{% set couchbase_version = couchbase_server.get('version', '2.5.1') -%}
+{% set couchbase_version = couchbase_server.get('version', '4.0.0') -%}
+{% set couchbase_edition = couchbase_server.get('edition', 'couchbase-server-community') -%}
 {% set couchbase_username = couchbase_server.get('couchbase_username', 'Administrator') -%}
-{% set couchbase_password = couchbase_server.get('couchbase_password', 'password') -%}
+{% set couchbase_password = couchbase_server.get('couchbase_password', 'soupersecret') -%}
 {% set couchbase_admin_port = couchbase_server.get('admin_port', '8091') -%}
-
+{% set osrelease = grains.get('osrelease') -%}
 
 {%- set node_mem_usage = (salt['grains.get']('mem_total', '') * (4 / 5))|round|int  %}
 
@@ -18,7 +19,9 @@ include:
 
 {%- set cluster_members = [] -%}
 
-{%- set util_compound_string = 'G@ec2_roles:*couchbase* and G@ec2_environment:' +  ','.join(grains.get('ec2_environment','')) + ' and G@ec2_apps:*' + ''.join(grains.get('ec2_apps','')) + '*' %}
+## switch for ec2 based tags 
+#{%- set util_compound_string = 'G@ec2_roles:*couchbase* and G@ec2_environment:' +  ','.join(grains.get('ec2_environment','')) + ' and G@ec2_apps:*' + ''.join(grains.get('ec2_apps','')) + '*' %}
+{%- set util_compound_string = 'G@roles:*couchbase* and G@environment:' +  ','.join(grains.get('environment','')) + '*' %}
 {%- set server_list = salt['publish.publish']( '%s' % util_compound_string, 'network.ip_addrs', 'eth0', 'compound') -%}
 
 {% for server,ips in server_list.iteritems() %}
@@ -54,17 +57,24 @@ couchbase-requirements:
       - curl
       - wget
 
+## the server is not in the repo yet.
+#couchbase-install:
+#  pkg.installed:
+#    - names:
+#      - {{ couchbase_edition }}: {{ couchbase_version }}
+
+# community is installable via apt
 couchbase-get:
   cmd.run:
-    - name: 'curl -o /src-salt/couchbase/couchbase-server-enterprise_{{ couchbase_version }}_x86_64.deb http://packages.couchbase.com/releases/2.5.1/couchbase-server-enterprise_{{ couchbase_version }}_x86_64.deb'
-    - unless: 'test -f /src-salt/couchbase/couchbase-server-enterprise_{{ couchbase_version }}_x86_64.deb'
+    - name: 'curl -o /src-salt/couchbase/{{ couchbase_edition }}_{{ couchbase_version }}-ubuntu{{ osrelease }}_amd64.deb http://packages.couchbase.com/releases/{{ couchbase_version }}/{{ couchbase_edition }}_{{ couchbase_version }}-ubuntu{{ osrelease }}_amd64.deb'
+    - unless: 'test -f /src-salt/couchbase/{{ couchbase_edition }}_{{ couchbase_version }}-ubuntu{{ osrelease }}_amd64.deb'
     - require:
       - file: couchbase-src-salt
       - pkg: couchbase-requirements
 
 couchbase-install:
   cmd.wait:
-    - name: dpkg -i /src-salt/couchbase/couchbase-server-enterprise_{{ couchbase_version }}_x86_64.deb
+    - name: dpkg -i /src-salt/couchbase/{{ couchbase_edition }}_{{ couchbase_version }}-ubuntu{{ osrelease }}_amd64.deb
     - cwd: /src-salt/couchbase
     - require:
       - cmd: couchbase-get
@@ -84,7 +94,7 @@ test:
 {%- if cluster_member == '127.0.0.1' %}
 couchbase-cluster-init:
   cmd.run:
-    - name: 'sleep 10s; /opt/couchbase/bin/couchbase-cli cluster-init -c 127.0.0.1:{{ couchbase_admin_port }} --cluster-init-port={{ couchbase_admin_port }} --cluster-init-username={{ couchbase_username }} --cluster-init-password={{ couchbase_password }} --cluster-init-ramsize={{ node_mem_usage }} -u {{ couchbase_username }} -p {{ couchbase_password }}'
+    - name: 'sleep 10s; /opt/couchbase/bin/couchbase-cli cluster-init -c 127.0.0.1:{{ couchbase_admin_port }} --cluster-init-port={{ couchbase_admin_port }} --cluster-init-username={{ couchbase_username }} --cluster-init-password={{ couchbase_password }} --cluster-init-ramsize={{ node_mem_usage }} --services=data,index,query -u {{ couchbase_username }} -p {{ couchbase_password }}'
     - unless: sleep 10 && /opt/couchbase/bin/couchbase-cli server-list -c 127.0.0.1:{{ couchbase_admin_port }} -u {{ couchbase_username }} -p {{ couchbase_password }} | grep '127.0.0.1' | grep "healthy active"
     - require:
         - service: couchbase-server
@@ -107,7 +117,7 @@ couchbase-cluster-bucket:
 {% else %}
 couchbase-cluster-init:
   cmd.run:
-    - name: 'sleep 10s; /opt/couchbase/bin/couchbase-cli cluster-init -c {{ salt['grains.get']('ip_interfaces:eth0')[0] }}:{{ couchbase_admin_port }} --cluster-init-port={{ couchbase_admin_port }} --cluster-init-username={{ couchbase_username }} --cluster-init-password={{ couchbase_password }} --cluster-init-ramsize={{ node_mem_usage }} -u {{ couchbase_username }} -p {{ couchbase_password }}'
+    - name: 'sleep 10s; /opt/couchbase/bin/couchbase-cli cluster-init -c {{ salt['grains.get']('ip_interfaces:eth0')[0] }}:{{ couchbase_admin_port }} --cluster-init-port={{ couchbase_admin_port }} --cluster-init-username={{ couchbase_username }} --cluster-init-password={{ couchbase_password }} --cluster-init-ramsize={{ node_mem_usage }} --services=data,index,query -u {{ couchbase_username }} -p {{ couchbase_password }}'
     - unless: sleep 10 && /opt/couchbase/bin/couchbase-cli server-list -c {{ cluster_member }}:{{ couchbase_admin_port }} -u {{ couchbase_username }} -p {{ couchbase_password }} | grep "healthy active" | grep '{{ cluster_member }}'
     - require:
         - service: couchbase-server

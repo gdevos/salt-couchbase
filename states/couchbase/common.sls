@@ -1,7 +1,9 @@
-include:
-  - build_tools
+#include:
+#  - build_tools
 
-{% if grains['osfinger'] == 'Ubuntu-12.04' %}
+{% if grains['osfinger'] == 'Ubuntu-14.04' %}
+  {% set couchbase_source_list = 'couchbase-ubuntu1404.list' %}
+{% elif grains['osfinger'] == 'Ubuntu-12.05' %}
   {% set couchbase_source_list = 'couchbase-ubuntu1204.list' %}
 {% elif grains['osfinger'] == 'Ubuntu-10.04 ' %}
   {% set couchbase_source_list = 'couchbase-ubuntu1004.list' %}

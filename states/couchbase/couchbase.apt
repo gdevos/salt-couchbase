@@ -1,4 +1,6 @@
-{% if grains['osfinger'] == 'Ubuntu-12.04' %}
+{% if grains['osfinger'] == 'Ubuntu-14.04' %}
+  {% couchbase_source_list = 'couchbase-ubuntu1404.list' %}
+{% elif grains['osfinger'] == 'Ubuntu-12.05' %}
   {% couchbase_source_list = 'couchbase-ubuntu1204.list' %}
 {% elif grains['osfinger'] == 'Ubuntu-10.04 '%}
   {% set couchbase_source_list = 'couchbase-ubuntu1004.list' %}
@@ -7,8 +9,7 @@
 couchbase-pkg:
   pkg.installed:
     - pkgs:
-        - libcouchbase2-libevent
-        - libcouchbase-dev
+        - couchbase-server-community
     - require:
         - file: /etc/apt/sources.list.d/couchbase.list
 

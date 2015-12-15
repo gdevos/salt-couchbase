@@ -2,10 +2,7 @@
 # couchbase pillar data
 #
 
-{% import 'macros.sls' as macros with context %}
-
-{% set roles = grains.get('ec2_roles', []) %}
-{% set environment = grains.get('ec2_environment', []) %}
+{% set environment = grains.get('environment') %}
 
 {#######################################################################
 ################ PRODUCTION VALUES                      ################
@@ -43,7 +40,8 @@
 {% endif %}
 
 couchbase_server:
-  version: 2.5.1
+  version: 4.0.0
+  edition: couchbase-server-community
   admin_port: 8091
   couchbase_username: {{ couchbase_username }}
   couchbase_password: {{ couchbase_password }}
