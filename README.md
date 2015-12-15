@@ -3,11 +3,12 @@ Salt State for Couchbase
 
 Salt state for installing and config management of Couchbase servers.
 
-ICYMI: Salt is a configuration management tool. http://saltstack.com/
+ICYMI: Salt is a configuration management tool. http://saltstack.com/  
 Couchbase is a NoSQL key-value and document database with memcached and couchdb roots. http://www.couchbase.com/
 
 The start files here were cloned from https://github.com/allanparsons/salt-couchbase
 
+The cluster does not initialize correct yet, WiP
 Usage
 -----
 
