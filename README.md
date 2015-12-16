@@ -8,7 +8,7 @@ Couchbase is a NoSQL key-value and document database with memcached and couchdb 
 
 The start files here were cloned from https://github.com/allanparsons/salt-couchbase
 
-The cluster does not initialize correct yet, WiP
+The state does not add extra nodes automatically to the cluster yet, WiP. Use the CLI or GUI commands to add nodes.
 Usage
 -----
 
